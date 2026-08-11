@@ -1,0 +1,28 @@
+import type { PromptItem } from './quotes'
+
+export const MANIFESTATION_PROMPTS: PromptItem[] = [
+  { id: 'm1', text: 'I am allowed to move through today at my own pace.' },
+  { id: 'm2', text: 'Aaj main apne aap ke saath thoda aur narm rahunga/rahungi.' },
+  { id: 'm3', text: 'What is one small thing you can forgive yourself for today?' },
+  { id: 'm4', text: 'Main jo bhi mehsoos kar raha/rahi hoon, woh theek hai.' },
+  { id: 'm5', text: 'I release the need to have everything figured out right now.' },
+  { id: 'm6', text: 'Aaj ka din mujhe kuch sikhayega — main khule dil se sununga/sunungi.' },
+  { id: 'm7', text: 'Name one thing your body needs from you today.' },
+  { id: 'm8', text: 'Main apne liye bhi utni hi daya rakhta/rakhti hoon jitni doosron ke liye.' },
+  { id: 'm9', text: 'I am becoming someone who chooses rest without guilt.' },
+  { id: 'm10', text: 'Kya aaj koi baat hai jise mujhe khud ko batani chahiye?' },
+  { id: 'm11', text: 'What would it feel like to trust yourself a little more today?' },
+  { id: 'm12', text: 'Main apni raftar se aage badhta/badhti hoon, kisi se compare nahi karta/karti.' },
+  { id: 'm13', text: 'I am worthy of the same kindness I give to others.' },
+  { id: 'm14', text: 'Aaj main kis baat ke liye shukar-guzaar hoon?' },
+  { id: 'm15', text: 'Let today be about progress, not perfection.' },
+  { id: 'm16', text: 'Main apne andar ki awaaz par bharosa karna seekh raha/rahi hoon.' },
+  { id: 'm17', text: 'What is weighing on you that you could set down, even briefly?' },
+  { id: 'm18', text: 'Meri feelings valid hain, chahe woh kisi ko samajh na aaye.' },
+  { id: 'm19', text: 'I choose to speak to myself the way I would speak to someone I love.' },
+  { id: 'm20', text: 'Aaj main khud ko ek chhota sa moment khushi ka doonga/doongi.' },
+  { id: 'm21', text: 'What does enough look like for you today — not more, just enough?' },
+  { id: 'm22', text: 'Main dheere dheere apne sabse acche version ki taraf badh raha/rahi hoon.' },
+  { id: 'm23', text: 'I am not behind. I am exactly where I need to be.' },
+  { id: 'm24', text: 'Aaj kisi ek chhoti si baat ko dil se enjoy karo.' },
+]

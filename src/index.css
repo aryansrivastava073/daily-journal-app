@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+
+@import '@fontsource/playfair-display/400.css';
+@import '@fontsource/playfair-display/500.css';
+@import '@fontsource/playfair-display/600.css';
+@import '@fontsource/playfair-display/400-italic.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --color-cream: #f9f9f6;
+  --color-cream-soft: #f3f2ec;
+  --color-sage: #e8efe9;
+  --color-sage-deep: #cdddd0;
+  --color-sage-ink: #4b5d51;
+  --color-peach: #f3e1dd;
+  --color-peach-deep: #e6c3bc;
+  --color-peach-ink: #7a4f47;
+  --color-ink: #2f2e2b;
+  --color-ink-soft: #6b6a63;
+  --color-line: #e7e5dd;
+
+  --color-dusk-bg-dark: #1b1d1a;
+  --color-dusk-surface-dark: #24261f;
+  --color-dusk-line-dark: #34362d;
+
+  --color-mood-bright: #f0b962;
+  --color-mood-calm: #9fc3c0;
+  --color-mood-reflective: #b2a6d6;
+  --color-mood-tender: #e7aeb8;
+  --color-mood-heavy: #97a1ab;
+  --color-mood-grateful: #b7cf95;
+  --color-mood-joyful: #eb9c66;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    --color-ink-soft: #9b9a92;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.dark body {
+    background-color: var(--color-dusk-bg-dark);
+    color: #eceae2;
+  }
+}
