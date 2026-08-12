@@ -14,5 +14,7 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: GOOGLE_TRANSLATE_API_KEY
+        sync: false
       - key: CORS_ORIGIN
         value: https://aryansrivastava073.github.io

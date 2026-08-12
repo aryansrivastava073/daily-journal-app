@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { createClaudeProvider } from '../lib/ai/claudeProvider.js'
 import { translateHinglishViaGoogle } from '../lib/ai/googleTranslateProvider.js'
+import { translateHinglishViaGoogleCloud } from '../lib/ai/googleCloudTranslateProvider.js'
 import { createLocalProvider } from '../lib/ai/localProvider.js'
 
 export const aiRouter = Router()
@@ -9,6 +10,7 @@ aiRouter.use(requireAuth)
 
 const localProvider = createLocalProvider()
 const apiKey = process.env.ANTHROPIC_API_KEY || null
+const googleCloudApiKey = process.env.GOOGLE_TRANSLATE_API_KEY || null
 
 aiRouter.post('/continue', async (req, res) => {
   const { text, mood } = req.body ?? {}
@@ -36,7 +38,16 @@ aiRouter.post('/translate', async (req, res) => {
     try {
       return res.json(await createClaudeProvider(apiKey).translateHinglish(text))
     } catch (err) {
-      console.error('translateHinglish: Claude failed, falling back to Google:', err.message)
+      console.error('translateHinglish: Claude failed, falling back:', err.message)
+    }
+  }
+
+  if (googleCloudApiKey) {
+    try {
+      const translated = await translateHinglishViaGoogleCloud(text, googleCloudApiKey)
+      return res.json({ text: translated, source: 'google' })
+    } catch (err) {
+      console.error('translateHinglish: Google Cloud Translate failed, falling back:', err.message)
     }
   }
 
@@ -44,7 +55,7 @@ aiRouter.post('/translate', async (req, res) => {
     const translated = await translateHinglishViaGoogle(text)
     return res.json({ text: translated, source: 'google' })
   } catch (err) {
-    console.error('translateHinglish: Google fallback failed, using local dictionary:', err.message)
+    console.error('translateHinglish: unofficial Google fallback failed, using local dictionary:', err.message)
   }
 
   res.json(await localProvider.translateHinglish(text))
