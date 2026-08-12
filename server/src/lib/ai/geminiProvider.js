@@ -33,7 +33,7 @@ async function callGemini(apiKey, systemInstruction, userText, maxOutputTokens) 
       body: JSON.stringify({
         contents: [{ parts: [{ text: userText }] }],
         systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { maxOutputTokens },
+        generationConfig: { maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
       }),
     })
 
@@ -61,14 +61,14 @@ export function createGeminiProvider(apiKey) {
         'You are a gentle journaling companion. Continue the user\'s journal entry in their own voice, ' +
         'for one or two short sentences only. Do not repeat what they wrote. Do not add quotation marks, ' +
         `labels, or commentary — reply with only the continuation text itself.${mood}`
-      const continuation = await callGemini(apiKey, system, text, options?.maxTokens ?? 120)
+      const continuation = await callGemini(apiKey, system, text, options?.maxTokens ?? 400)
       return { text: continuation, source: 'gemini' }
     },
     async translateHinglish(text) {
       const system =
         'Translate the following Hinglish (mixed Hindi/English, romanized) journal text into natural, ' +
         'warm English. Preserve the meaning and tone. Reply with only the translated text, nothing else.'
-      const translated = await callGemini(apiKey, system, text, 300)
+      const translated = await callGemini(apiKey, system, text, 600)
       return { text: translated, source: 'gemini' }
     },
   }
