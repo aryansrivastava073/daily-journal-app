@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { createClaudeProvider } from '../lib/ai/claudeProvider.js'
+import { createGeminiProvider } from '../lib/ai/geminiProvider.js'
 import { translateHinglishViaGoogle } from '../lib/ai/googleTranslateProvider.js'
 import { translateHinglishViaGoogleCloud } from '../lib/ai/googleCloudTranslateProvider.js'
 import { createLocalProvider } from '../lib/ai/localProvider.js'
@@ -10,6 +11,7 @@ aiRouter.use(requireAuth)
 
 const localProvider = createLocalProvider()
 const apiKey = process.env.ANTHROPIC_API_KEY || null
+const geminiApiKey = process.env.GEMINI_API_KEY || null
 const googleCloudApiKey = process.env.GOOGLE_TRANSLATE_API_KEY || null
 
 aiRouter.post('/continue', async (req, res) => {
@@ -22,9 +24,18 @@ aiRouter.post('/continue', async (req, res) => {
     try {
       return res.json(await createClaudeProvider(apiKey).continueThought(text, { mood }))
     } catch (err) {
-      console.error('continueThought: Claude failed, falling back to local heuristic:', err.message)
+      console.error('continueThought: Claude failed, falling back:', err.message)
     }
   }
+
+  if (geminiApiKey) {
+    try {
+      return res.json(await createGeminiProvider(geminiApiKey).continueThought(text, { mood }))
+    } catch (err) {
+      console.error('continueThought: Gemini failed, falling back to local heuristic:', err.message)
+    }
+  }
+
   res.json(await localProvider.continueThought(text))
 })
 
@@ -39,6 +50,14 @@ aiRouter.post('/translate', async (req, res) => {
       return res.json(await createClaudeProvider(apiKey).translateHinglish(text))
     } catch (err) {
       console.error('translateHinglish: Claude failed, falling back:', err.message)
+    }
+  }
+
+  if (geminiApiKey) {
+    try {
+      return res.json(await createGeminiProvider(geminiApiKey).translateHinglish(text))
+    } catch (err) {
+      console.error('translateHinglish: Gemini failed, falling back:', err.message)
     }
   }
 

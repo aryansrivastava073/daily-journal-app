@@ -5,7 +5,7 @@ export interface AIContinueOptions {
   maxTokens?: number
 }
 
-export type AISource = 'claude' | 'google' | 'local'
+export type AISource = 'claude' | 'gemini' | 'google' | 'local'
 
 export interface AIResult {
   text: string
