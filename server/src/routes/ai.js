@@ -14,6 +14,45 @@ const apiKey = process.env.ANTHROPIC_API_KEY || null
 const geminiApiKey = process.env.GEMINI_API_KEY || null
 const googleCloudApiKey = process.env.GOOGLE_TRANSLATE_API_KEY || null
 
+aiRouter.get('/status', async (req, res) => {
+  const status = {}
+
+  status.claude = { configured: Boolean(apiKey) }
+  if (apiKey) {
+    try {
+      await createClaudeProvider(apiKey).translateHinglish('test')
+      status.claude.ok = true
+    } catch (err) {
+      status.claude.ok = false
+      status.claude.error = err.message
+    }
+  }
+
+  status.gemini = { configured: Boolean(geminiApiKey) }
+  if (geminiApiKey) {
+    try {
+      await createGeminiProvider(geminiApiKey).translateHinglish('test')
+      status.gemini.ok = true
+    } catch (err) {
+      status.gemini.ok = false
+      status.gemini.error = err.message
+    }
+  }
+
+  status.googleCloudTranslate = { configured: Boolean(googleCloudApiKey) }
+  if (googleCloudApiKey) {
+    try {
+      await translateHinglishViaGoogleCloud('test', googleCloudApiKey)
+      status.googleCloudTranslate.ok = true
+    } catch (err) {
+      status.googleCloudTranslate.ok = false
+      status.googleCloudTranslate.error = err.message
+    }
+  }
+
+  res.json(status)
+})
+
 aiRouter.post('/continue', async (req, res) => {
   const { text, mood } = req.body ?? {}
   if (typeof text !== 'string' || !text.trim()) {
