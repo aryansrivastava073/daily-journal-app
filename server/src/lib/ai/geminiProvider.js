@@ -1,6 +1,26 @@
 const GEMINI_MODEL = 'gemini-2.5-flash'
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+const GEMINI_API_URL = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent`
 const TIMEOUT_MS = 10_000
+
+export async function listGeminiModels(apiKey) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  try {
+    const response = await fetch(`${GEMINI_API_BASE}?key=${encodeURIComponent(apiKey)}`, {
+      signal: controller.signal,
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    return (data.models ?? [])
+      .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+      .map((m) => m.name.replace('models/', ''))
+  } catch {
+    return []
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
 async function callGemini(apiKey, systemInstruction, userText, maxOutputTokens) {
   const controller = new AbortController()

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { createClaudeProvider } from '../lib/ai/claudeProvider.js'
-import { createGeminiProvider } from '../lib/ai/geminiProvider.js'
+import { createGeminiProvider, listGeminiModels } from '../lib/ai/geminiProvider.js'
 import { translateHinglishViaGoogle } from '../lib/ai/googleTranslateProvider.js'
 import { translateHinglishViaGoogleCloud } from '../lib/ai/googleCloudTranslateProvider.js'
 import { createLocalProvider } from '../lib/ai/localProvider.js'
@@ -36,6 +36,7 @@ aiRouter.get('/status', async (req, res) => {
     } catch (err) {
       status.gemini.ok = false
       status.gemini.error = err.message
+      status.gemini.availableModels = await listGeminiModels(geminiApiKey)
     }
   }
 
