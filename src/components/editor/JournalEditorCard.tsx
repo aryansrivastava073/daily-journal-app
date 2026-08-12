@@ -7,15 +7,14 @@ import { AttachmentPreviewList } from './AttachmentPreviewList'
 import { EditorFooterToolbar } from './EditorFooterToolbar'
 import { countWords } from '@/lib/wordCount'
 import { extractHashtags, mergeTags } from '@/lib/tagParser'
-import { uuid } from '@/lib/uuid'
-import { getMediaForEntry, addMedia, deleteMedia as dbDeleteMedia } from '@/lib/db'
+import { mediaApi } from '@/lib/api'
 import { useEntries } from '@/state/EntriesContext'
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback'
 import { aiProvider } from '@/lib/ai'
 
 interface JournalEditorCardProps {
   entry: JournalEntry
-  onUpdate: (partial: Partial<JournalEntry>) => void
+  onUpdate: (partial: Partial<JournalEntry>) => Promise<JournalEntry>
 }
 
 export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
@@ -25,6 +24,7 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
   const [attachments, setAttachments] = useState<MediaAttachment[]>([])
   const [aiBusy, setAiBusy] = useState<'continue' | 'translate' | null>(null)
   const [aiSourceNote, setAiSourceNote] = useState<string | null>(null)
+  const [mediaBusy, setMediaBusy] = useState(false)
 
   useEffect(() => {
     setTitle(entry.title)
@@ -32,7 +32,11 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
   }, [entry.id])
 
   useEffect(() => {
-    getMediaForEntry(entry.id).then(setAttachments)
+    if (!entry.id) {
+      setAttachments([])
+      return
+    }
+    mediaApi.listForEntry(entry.id).then(setAttachments)
   }, [entry.id])
 
   const debouncedTextUpdate = useDebouncedCallback((next: { title: string; body: string }) => {
@@ -53,46 +57,40 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
   const manualTags = entry.tags.filter((tag) => !parsedTags.includes(tag))
 
   function addManualTag(tag: string) {
-    onUpdate({ tags: mergeTags([...manualTags, tag], parsedTags) })
+    onUpdate({ title, body, tags: mergeTags([...manualTags, tag], parsedTags) })
   }
 
   function removeManualTag(tag: string) {
-    onUpdate({ tags: mergeTags(manualTags.filter((t) => t !== tag), parsedTags) })
+    onUpdate({ title, body, tags: mergeTags(manualTags.filter((t) => t !== tag), parsedTags) })
+  }
+
+  async function withSavedEntry<T>(action: (savedEntry: JournalEntry) => Promise<T>): Promise<T> {
+    setMediaBusy(true)
+    try {
+      const saved = await onUpdate({ title, body })
+      return await action(saved)
+    } finally {
+      setMediaBusy(false)
+    }
   }
 
   async function attachFile(file: File, kind: MediaKind) {
-    const attachment: MediaAttachment = {
-      id: uuid(),
-      entryId: entry.id,
-      kind,
-      blob: file,
-      mimeType: file.type,
-      fileName: file.name,
-      createdAt: Date.now(),
-    }
-    await addMedia(attachment)
-    setAttachments((prev) => [...prev, attachment])
-    onUpdate({ mediaIds: [...entry.mediaIds, attachment.id] })
+    await withSavedEntry(async (saved) => {
+      const meta = await mediaApi.upload(saved.id, file, kind, file.name)
+      setAttachments((prev) => [...prev, meta])
+    })
   }
 
   async function attachAudio(blob: Blob) {
-    const attachment: MediaAttachment = {
-      id: uuid(),
-      entryId: entry.id,
-      kind: 'audio',
-      blob,
-      mimeType: blob.type || 'audio/webm',
-      createdAt: Date.now(),
-    }
-    await addMedia(attachment)
-    setAttachments((prev) => [...prev, attachment])
-    onUpdate({ mediaIds: [...entry.mediaIds, attachment.id] })
+    await withSavedEntry(async (saved) => {
+      const meta = await mediaApi.upload(saved.id, blob, 'audio')
+      setAttachments((prev) => [...prev, meta])
+    })
   }
 
   async function removeAttachment(id: string) {
-    await dbDeleteMedia(id)
+    await mediaApi.remove(id)
     setAttachments((prev) => prev.filter((a) => a.id !== id))
-    onUpdate({ mediaIds: entry.mediaIds.filter((mediaId) => mediaId !== id) })
   }
 
   async function handleContinueThought() {
@@ -102,7 +100,7 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
       const result = await aiProvider.continueThought(body, { mood: entry.mood })
       const nextBody = `${body.trim()} ${result.text}`.trim()
       setBody(nextBody)
-      onUpdate({ body: nextBody })
+      onUpdate({ title, body: nextBody })
       setAiSourceNote(result.source === 'local' ? '(offline suggestion)' : null)
     } finally {
       setAiBusy(null)
@@ -115,7 +113,7 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
     try {
       const result = await aiProvider.translateHinglish(body)
       setBody(result.text)
-      onUpdate({ body: result.text })
+      onUpdate({ title, body: result.text })
       setAiSourceNote(
         result.source === 'local'
           ? '(offline translation)'
@@ -131,11 +129,12 @@ export function JournalEditorCard({ entry, onUpdate }: JournalEditorCardProps) {
   return (
     <div className="rounded-2xl border border-line bg-white/60 p-4 shadow-sm sm:p-6 dark:border-dusk-line-dark dark:bg-white/5">
       <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <MoodSelector value={entry.mood} onChange={(mood) => onUpdate({ mood })} />
+        <MoodSelector value={entry.mood} onChange={(mood) => onUpdate({ title, body, mood })} />
         <AttachmentToolbar
           onPickImage={(file) => attachFile(file, 'image')}
           onPickVideo={(file) => attachFile(file, 'video')}
           onRecordAudio={attachAudio}
+          disabled={mediaBusy}
         />
       </div>
 

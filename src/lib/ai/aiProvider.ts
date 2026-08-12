@@ -1,7 +1,6 @@
 import type { AIProvider, AIContinueOptions, AIResult } from '@/types/ai'
-import { createClaudeProvider } from './claudeProvider'
 import { createLocalProvider } from './localProvider'
-import { translateHinglishViaGoogle } from './googleTranslateProvider'
+import { aiApi } from '@/lib/api'
 
 const localProvider = createLocalProvider()
 
@@ -9,35 +8,25 @@ function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine
 }
 
-export function createAIProvider(getApiKey: () => string | null): AIProvider {
+export function createAIProvider(): AIProvider {
   return {
     async continueThought(text: string, options?: AIContinueOptions): Promise<AIResult> {
-      const apiKey = getApiKey()
-      if (isOnline() && apiKey) {
+      if (isOnline()) {
         try {
-          return await createClaudeProvider(apiKey).continueThought(text, options)
+          return await aiApi.continueThought(text, options?.mood)
         } catch {
-          // fall through to the local heuristic below
+          // backend unreachable — fall through to the local heuristic below
         }
       }
       return localProvider.continueThought(text, options)
     },
 
     async translateHinglish(text: string): Promise<AIResult> {
-      const apiKey = getApiKey()
-      if (isOnline() && apiKey) {
-        try {
-          return await createClaudeProvider(apiKey).translateHinglish(text)
-        } catch {
-          // fall through to the free translator below
-        }
-      }
       if (isOnline()) {
         try {
-          const translated = await translateHinglishViaGoogle(text)
-          return { text: translated, source: 'google' }
+          return await aiApi.translateHinglish(text)
         } catch {
-          // fall through to the offline dictionary below
+          // backend unreachable — fall through to the offline dictionary below
         }
       }
       return localProvider.translateHinglish(text)

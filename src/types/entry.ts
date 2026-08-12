@@ -7,7 +7,6 @@ export interface JournalEntry {
   body: string
   mood: MoodId | null
   tags: string[]
-  mediaIds: string[]
   createdAt: number
   updatedAt: number
 }

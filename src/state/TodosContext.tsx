@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { listTodos, putTodo as dbPutTodo, deleteTodo as dbDeleteTodo } from '@/lib/db'
+import { todosApi } from '@/lib/api'
 import type { Todo } from '@/types/todo'
-import { uuid } from '@/lib/uuid'
 
 interface TodosContextValue {
   todos: Todo[]
@@ -18,32 +17,26 @@ export function TodosProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    listTodos().then((list) => {
+    todosApi.list().then((list) => {
       setTodos(list)
       setLoaded(true)
     })
   }, [])
 
   async function addTodo(text: string, tag?: string) {
-    const todo: Todo = { id: uuid(), text, done: false, tag, createdAt: Date.now() }
-    await dbPutTodo(todo)
+    const todo = await todosApi.create(text, tag)
     setTodos((prev) => [...prev, todo])
   }
 
   async function toggleTodo(id: string) {
     const todo = todos.find((t) => t.id === id)
     if (!todo) return
-    const next: Todo = {
-      ...todo,
-      done: !todo.done,
-      completedAt: !todo.done ? Date.now() : undefined,
-    }
-    await dbPutTodo(next)
+    const next = await todosApi.setDone(id, !todo.done)
     setTodos((prev) => prev.map((t) => (t.id === id ? next : t)))
   }
 
   async function removeTodo(id: string) {
-    await dbDeleteTodo(id)
+    await todosApi.remove(id)
     setTodos((prev) => prev.filter((t) => t.id !== id))
   }
 

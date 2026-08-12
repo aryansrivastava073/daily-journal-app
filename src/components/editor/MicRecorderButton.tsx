@@ -3,9 +3,10 @@ import { useAudioRecorder } from '@/hooks/useAudioRecorder'
 
 interface MicRecorderButtonProps {
   onRecorded: (blob: Blob) => void
+  disabled?: boolean
 }
 
-export function MicRecorderButton({ onRecorded }: MicRecorderButtonProps) {
+export function MicRecorderButton({ onRecorded, disabled }: MicRecorderButtonProps) {
   const { status, start, stop } = useAudioRecorder()
 
   async function handleClick() {
@@ -22,9 +23,10 @@ export function MicRecorderButton({ onRecorded }: MicRecorderButtonProps) {
       <button
         type="button"
         onClick={handleClick}
+        disabled={disabled}
         aria-label={status === 'recording' ? 'Stop recording' : 'Record an audio note'}
         className={clsx(
-          'inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors',
+          'inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors disabled:pointer-events-none disabled:opacity-50',
           status === 'recording'
             ? 'bg-mood-tender text-white animate-pulse'
             : 'text-ink-soft hover:bg-sage hover:text-ink',

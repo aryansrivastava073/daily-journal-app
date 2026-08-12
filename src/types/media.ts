@@ -4,7 +4,6 @@ export interface MediaAttachment {
   id: string
   entryId: string
   kind: MediaKind
-  blob: Blob
   mimeType: string
   fileName?: string
   durationSec?: number

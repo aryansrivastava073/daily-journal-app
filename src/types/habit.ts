@@ -11,3 +11,7 @@ export interface HabitLog {
   date: string
   completedAt: number
 }
+
+export interface HabitWithLogs extends Habit {
+  logDates: string[]
+}

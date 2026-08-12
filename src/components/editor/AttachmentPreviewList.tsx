@@ -1,5 +1,5 @@
 import type { MediaAttachment } from '@/types/media'
-import { useObjectUrl } from '@/hooks/useObjectUrl'
+import { useRemoteMediaUrl } from '@/hooks/useRemoteMediaUrl'
 
 interface AttachmentPreviewListProps {
   attachments: MediaAttachment[]
@@ -29,10 +29,18 @@ function AttachmentPreviewItem({
   attachment: MediaAttachment
   onDelete: () => void
 }) {
-  const url = useObjectUrl(attachment.blob)
+  const { url, loading, error } = useRemoteMediaUrl(attachment.id)
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-line bg-white/60 dark:border-dusk-line-dark dark:bg-white/5">
+      {loading && (
+        <div className="flex h-28 w-28 items-center justify-center text-xs text-ink-soft">Loading…</div>
+      )}
+      {error && (
+        <div className="flex h-28 w-28 items-center justify-center p-2 text-center text-xs text-ink-soft">
+          Couldn't load
+        </div>
+      )}
       {url && attachment.kind === 'image' && (
         <img src={url} alt={attachment.fileName ?? 'attached image'} className="h-28 w-28 object-cover" />
       )}

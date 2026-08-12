@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { listEntriesInRange, getMediaForEntry } from '@/lib/db'
+import { entriesApi, mediaApi } from '@/lib/api'
 import { formatDisplayDate } from '@/lib/dateUtils'
 import { getMood } from '@/data/moods'
 import { blobToDataUrl } from '@/lib/blobUtils'
@@ -8,7 +8,7 @@ import type { JournalEntry } from '@/types/entry'
 
 async function renderEntryNode(entry: JournalEntry): Promise<HTMLDivElement> {
   const mood = getMood(entry.mood)
-  const media = await getMediaForEntry(entry.id)
+  const media = await mediaApi.listForEntry(entry.id)
   const images = media.filter((m) => m.kind === 'image')
 
   const node = document.createElement('div')
@@ -81,7 +81,8 @@ async function renderEntryNode(entry: JournalEntry): Promise<HTMLDivElement> {
       gap: '10px',
     })
     for (const image of images) {
-      const dataUrl = await blobToDataUrl(image.blob)
+      const blob = await mediaApi.fetchBlob(image.id)
+      const dataUrl = await blobToDataUrl(blob)
       const img = document.createElement('img')
       img.src = dataUrl
       Object.assign(img.style, {
@@ -99,7 +100,7 @@ async function renderEntryNode(entry: JournalEntry): Promise<HTMLDivElement> {
 }
 
 export async function exportEntriesToPdf(from: string, to: string): Promise<void> {
-  const entries = await listEntriesInRange(from, to)
+  const entries = await entriesApi.list(from, to)
   const nonEmpty = entries.filter((e) => e.title.trim() || e.body.trim())
 
   if (nonEmpty.length === 0) {

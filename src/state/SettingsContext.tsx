@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { getSettings, putSettings } from '@/lib/db'
+import { settingsApi } from '@/lib/api'
 import { DEFAULT_SETTINGS, type Settings } from '@/types/settings'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 
@@ -19,7 +19,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [, setThemeCache] = useLocalStorage(THEME_CACHE_KEY)
 
   useEffect(() => {
-    getSettings().then((loadedSettings) => {
+    settingsApi.get().then((loadedSettings) => {
       setSettings(loadedSettings)
       setLoaded(true)
     })
@@ -31,9 +31,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings.themeMode, setThemeCache])
 
   async function updateSettings(partial: Partial<Settings>) {
-    const next = { ...settings, ...partial }
+    const next = await settingsApi.update(partial)
     setSettings(next)
-    await putSettings(next)
   }
 
   return (

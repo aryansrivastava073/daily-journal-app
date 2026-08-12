@@ -1,15 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import {
-  listHabits,
-  putHabit as dbPutHabit,
-  deleteHabit as dbDeleteHabit,
-  toggleHabitLog as dbToggleHabitLog,
-  listAllHabitLogs,
-} from '@/lib/db'
-import type { Habit } from '@/types/habit'
+import { habitsApi } from '@/lib/api'
+import type { Habit, HabitWithLogs } from '@/types/habit'
 import { calculateStreak } from '@/lib/streak'
 import { todayLocalDateString } from '@/lib/dateUtils'
-import { uuid } from '@/lib/uuid'
 
 export interface HabitWithStreak extends Habit {
   streak: number
@@ -27,64 +20,52 @@ interface HabitsContextValue {
 const HabitsContext = createContext<HabitsContextValue | null>(null)
 
 export function HabitsProvider({ children }: { children: ReactNode }) {
-  const [habits, setHabits] = useState<Habit[]>([])
-  const [logsByHabit, setLogsByHabit] = useState<Map<string, Set<string>>>(new Map())
+  const [habits, setHabits] = useState<HabitWithLogs[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([listHabits(), listAllHabitLogs()]).then(([habitList, logs]) => {
-      const map = new Map<string, Set<string>>()
-      for (const log of logs) {
-        if (!map.has(log.habitId)) map.set(log.habitId, new Set())
-        map.get(log.habitId)!.add(log.date)
-      }
+    habitsApi.list().then((habitList) => {
       setHabits(habitList)
-      setLogsByHabit(map)
       setLoaded(true)
     })
   }, [])
 
   async function addHabit(name: string) {
-    const habit: Habit = { id: uuid(), name, createdAt: Date.now() }
-    await dbPutHabit(habit)
+    const habit = await habitsApi.create(name)
     setHabits((prev) => [...prev, habit])
   }
 
   async function toggleToday(habitId: string) {
     const today = todayLocalDateString()
-    const dates = logsByHabit.get(habitId) ?? new Set<string>()
-    const nextCompleted = !dates.has(today)
-    await dbToggleHabitLog(habitId, today, nextCompleted)
-    setLogsByHabit((prev) => {
-      const next = new Map(prev)
-      const nextDates = new Set(next.get(habitId) ?? [])
-      if (nextCompleted) nextDates.add(today)
-      else nextDates.delete(today)
-      next.set(habitId, nextDates)
-      return next
-    })
+    const habit = habits.find((h) => h.id === habitId)
+    const nextCompleted = !(habit?.logDates.includes(today) ?? false)
+    await habitsApi.toggle(habitId, today, nextCompleted)
+    setHabits((prev) =>
+      prev.map((h) =>
+        h.id === habitId
+          ? {
+              ...h,
+              logDates: nextCompleted
+                ? [...h.logDates, today]
+                : h.logDates.filter((d) => d !== today),
+            }
+          : h,
+      ),
+    )
   }
 
   async function deleteHabit(id: string) {
-    await dbDeleteHabit(id)
+    await habitsApi.remove(id)
     setHabits((prev) => prev.filter((h) => h.id !== id))
-    setLogsByHabit((prev) => {
-      const next = new Map(prev)
-      next.delete(id)
-      return next
-    })
   }
 
   const habitsWithStreak: HabitWithStreak[] = habits
     .filter((h) => !h.archived)
-    .map((habit) => {
-      const dates = logsByHabit.get(habit.id) ?? new Set<string>()
-      return {
-        ...habit,
-        streak: calculateStreak(dates),
-        checkedToday: dates.has(todayLocalDateString()),
-      }
-    })
+    .map((habit) => ({
+      ...habit,
+      streak: calculateStreak(new Set(habit.logDates)),
+      checkedToday: habit.logDates.includes(todayLocalDateString()),
+    }))
 
   return (
     <HabitsContext.Provider

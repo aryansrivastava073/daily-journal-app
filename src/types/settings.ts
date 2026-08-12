@@ -1,5 +1,4 @@
 export interface Settings {
-  id: 'app'
   themeMode: 'light' | 'dark'
   calendarView: 'month' | 'week'
   weekStartsOn: 0 | 1
@@ -8,7 +7,6 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  id: 'app',
   themeMode: 'light',
   calendarView: 'month',
   weekStartsOn: 1,

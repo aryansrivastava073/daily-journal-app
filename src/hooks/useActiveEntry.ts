@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useEntries } from '@/state/EntriesContext'
 import type { JournalEntry } from '@/types/entry'
-import { uuid } from '@/lib/uuid'
 
 function blankEntry(date: string): JournalEntry {
   return {
-    id: uuid(),
+    id: '',
     date,
     title: '',
     body: '',
     mood: null,
     tags: [],
-    mediaIds: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
@@ -29,10 +27,10 @@ export function useActiveEntry(date: string) {
 
   const entry = useMemo(() => persisted ?? draft, [persisted, draft])
 
-  function update(partial: Partial<JournalEntry>) {
+  function update(partial: Partial<JournalEntry>): Promise<JournalEntry> {
     const next: JournalEntry = { ...entry, ...partial, updatedAt: Date.now() }
     setDraft(next)
-    void saveEntry(next)
+    return saveEntry(date, next)
   }
 
   return { entry, update }

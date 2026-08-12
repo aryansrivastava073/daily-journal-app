@@ -3,6 +3,9 @@ dist
 dist-ssr
 *.local
 .DS_Store
+.env
+server/.pglite-data
+.claude
 
 # vite
 .vite

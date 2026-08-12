@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { listAllEntries, putEntry as dbPutEntry, deleteEntry as dbDeleteEntry } from '@/lib/db'
+import { entriesApi } from '@/lib/api'
 import type { JournalEntry } from '@/types/entry'
 import { calculateStreak } from '@/lib/streak'
 
@@ -7,7 +7,7 @@ interface EntriesContextValue {
   entriesByDate: Map<string, JournalEntry>
   loaded: boolean
   writingStreak: number
-  saveEntry: (entry: JournalEntry) => Promise<void>
+  saveEntry: (date: string, entry: Pick<JournalEntry, 'title' | 'body' | 'mood' | 'tags'>) => Promise<JournalEntry>
   removeEntry: (id: string, date: string) => Promise<void>
 }
 
@@ -22,7 +22,7 @@ export function EntriesProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    listAllEntries().then((entries) => {
+    entriesApi.list().then((entries) => {
       const map = new Map<string, JournalEntry>()
       for (const entry of entries) map.set(entry.date, entry)
       setEntriesByDate(map)
@@ -30,17 +30,21 @@ export function EntriesProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  async function saveEntry(entry: JournalEntry) {
-    await dbPutEntry(entry)
+  async function saveEntry(
+    date: string,
+    entry: Pick<JournalEntry, 'title' | 'body' | 'mood' | 'tags'>,
+  ): Promise<JournalEntry> {
+    const saved = await entriesApi.upsertByDate(date, entry)
     setEntriesByDate((prev) => {
       const next = new Map(prev)
-      next.set(entry.date, entry)
+      next.set(date, saved)
       return next
     })
+    return saved
   }
 
   async function removeEntry(id: string, date: string) {
-    await dbDeleteEntry(id)
+    await entriesApi.remove(id)
     setEntriesByDate((prev) => {
       const next = new Map(prev)
       next.delete(date)
