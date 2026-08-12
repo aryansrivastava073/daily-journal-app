@@ -14,7 +14,15 @@ const apiKey = process.env.ANTHROPIC_API_KEY || null
 const geminiApiKey = process.env.GEMINI_API_KEY || null
 const googleCloudApiKey = process.env.GOOGLE_TRANSLATE_API_KEY || null
 
+const STATUS_CACHE_TTL_MS = 5 * 60 * 1000
+let statusCache = null
+let statusCacheAt = 0
+
 aiRouter.get('/status', async (req, res) => {
+  if (statusCache && Date.now() - statusCacheAt < STATUS_CACHE_TTL_MS) {
+    return res.json({ ...statusCache, cached: true })
+  }
+
   const status = {}
 
   status.claude = { configured: Boolean(apiKey) }
@@ -51,6 +59,8 @@ aiRouter.get('/status', async (req, res) => {
     }
   }
 
+  statusCache = status
+  statusCacheAt = Date.now()
   res.json(status)
 })
 
